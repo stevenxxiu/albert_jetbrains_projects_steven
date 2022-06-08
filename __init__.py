@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 
 '''List and open JetBrains IDE projects.'''
-
-import os
 import time
+from pathlib import Path
 from shutil import which
 from xml.etree import ElementTree
 
@@ -15,11 +14,10 @@ __version__ = '0.4.5'
 __triggers__ = 'jb '
 __authors__ = 'Markus Richter, Thomas Queste'
 
-default_icon = os.path.dirname(__file__) + '/icons/jetbrains.svg'
-HOME_DIR = os.environ['HOME']
+default_icon = str(Path(__file__).parent / 'icons/jetbrains.svg')
 
-JETBRAINS_XDG_CONFIG_DIR = os.path.join(HOME_DIR, '.config/JetBrains')
-GOOGLE_XDG_CONFIG_DIR = os.path.join(HOME_DIR, '.config/Google')
+JETBRAINS_XDG_CONFIG_DIR = Path.home() / '.config/JetBrains'
+GOOGLE_XDG_CONFIG_DIR = Path.home() / '.config/Google'
 
 # for all new (2020.1+) config folders and IntelliJIdea and AndroidStudio, this is the right path.
 NEW_RELATIVE_CONFIG_PATH = 'options/recentProjects.xml'
@@ -82,7 +80,7 @@ def get_proj(path):
                 ):
                     path2timestamp[entry_tag.attrib['key']] = int(option_tag.attrib['value'])
 
-    return [(timestamp, path.replace('$USER_HOME$', HOME_DIR)) for path, timestamp in path2timestamp.items()]
+    return [(timestamp, path.replace('$USER_HOME$', str(Path.home()))) for path, timestamp in path2timestamp.items()]
 
 
 # finds the actual path to the relevant xml file of the most recent configuration directory
@@ -92,32 +90,30 @@ def find_config_path(app_name: str):
     xdg_dir = GOOGLE_XDG_CONFIG_DIR if app_name == 'AndroidStudio' else JETBRAINS_XDG_CONFIG_DIR
 
     # newer versions (since 2020.1) put their configuration here
-    if os.path.isdir(xdg_dir):
+    if xdg_dir.is_dir():
         # dirs contains possibly multiple directories for a program (eg. .GoLand2018.1 and .GoLand2017.3)
-        dirs = [f for f in os.listdir(xdg_dir) if os.path.isdir(os.path.join(xdg_dir, f)) and f.startswith(app_name)]
+        dirs = [f for f in xdg_dir.iterdir() if (xdg_dir / f).is_dir() and f.name.startswith(app_name)]
         # take the newest
         dirs.sort(reverse=True)
         if len(dirs) != 0:
-            full_config_path = os.path.join(xdg_dir, dirs[0], NEW_RELATIVE_CONFIG_PATH)
+            full_config_path = xdg_dir / dirs[0] / NEW_RELATIVE_CONFIG_PATH
 
     # if no config was found in the newer path, repeat for the old ones
-    if full_config_path is None or not os.path.exists(full_config_path):
+    if full_config_path is None or not full_config_path.exists():
 
         # dirs contains possibly multiple directories for a program (eg. .GoLand2018.1 and .GoLand2017.3)
-        dirs = [
-            f for f in os.listdir(HOME_DIR) if os.path.isdir(os.path.join(HOME_DIR, f)) and f.startswith('.' + app_name)
-        ]
+        dirs = [f for f in Path.home().iterdir() if (Path.home() / f).is_dir() and f.name.startswith(f'.{app_name}')]
         # take the newest
         dirs.sort(reverse=True)
         if len(dirs) == 0:
             return None
 
         if app_name not in ('IntelliJIdea', 'AndroidStudio'):
-            full_config_path = os.path.join(HOME_DIR, dirs[0], 'config', OLD_RELATIVE_CONFIG_PATH)
+            full_config_path = Path.home() / dirs[0] / 'config' / OLD_RELATIVE_CONFIG_PATH
         else:
-            full_config_path = os.path.join(HOME_DIR, dirs[0], 'config', NEW_RELATIVE_CONFIG_PATH)
+            full_config_path = Path.home() / dirs[0] / 'config' / NEW_RELATIVE_CONFIG_PATH
 
-        if not os.path.exists(full_config_path):
+        if not full_config_path.exists():
             return None
     return full_config_path
 
@@ -156,9 +152,9 @@ def handleQuery(query):
     items = []
     now = int(time.time() * 1000.0)
     for last_update, project_path, app_name in projects:
-        if not os.path.exists(project_path):
+        if not Path(project_path).exists():
             continue
-        project_dir = project_path.split('/')[-1]
+        project_dir = Path(project_path).name
         binary = binaries[app_name]
         if not binary:
             continue
