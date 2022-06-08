@@ -19,11 +19,6 @@ default_icon = str(Path(__file__).parent / 'icons/jetbrains.svg')
 JETBRAINS_XDG_CONFIG_DIR = Path.home() / '.config/JetBrains'
 GOOGLE_XDG_CONFIG_DIR = Path.home() / '.config/Google'
 
-# for all new (2020.1+) config folders and IntelliJIdea and AndroidStudio, this is the right path.
-NEW_RELATIVE_CONFIG_PATH = 'options/recentProjects.xml'
-# for older config folders of other IDEs, the following is right:
-OLD_RELATIVE_CONFIG_PATH = 'options/recentProjectDirectories.xml'
-
 paths = [  # <Name for config directory>, <possible names for the binary/icon>
     ['AndroidStudio', 'android-studio'],
     ['CLion', 'clion'],
@@ -85,37 +80,18 @@ def get_proj(path):
 
 # finds the actual path to the relevant xml file of the most recent configuration directory
 def find_config_path(app_name: str):
-    full_config_path = None
-
     xdg_dir = GOOGLE_XDG_CONFIG_DIR if app_name == 'AndroidStudio' else JETBRAINS_XDG_CONFIG_DIR
 
-    # newer versions (since 2020.1) put their configuration here
-    if xdg_dir.is_dir():
-        # dirs contains possibly multiple directories for a program (eg. .GoLand2018.1 and .GoLand2017.3)
-        dirs = [f for f in xdg_dir.iterdir() if (xdg_dir / f).is_dir() and f.name.startswith(app_name)]
-        # take the newest
-        dirs.sort(reverse=True)
-        if len(dirs) != 0:
-            full_config_path = xdg_dir / dirs[0] / NEW_RELATIVE_CONFIG_PATH
+    if not xdg_dir.is_dir():
+        return None
 
-    # if no config was found in the newer path, repeat for the old ones
-    if full_config_path is None or not full_config_path.exists():
-
-        # dirs contains possibly multiple directories for a program (eg. .GoLand2018.1 and .GoLand2017.3)
-        dirs = [f for f in Path.home().iterdir() if (Path.home() / f).is_dir() and f.name.startswith(f'.{app_name}')]
-        # take the newest
-        dirs.sort(reverse=True)
-        if len(dirs) == 0:
-            return None
-
-        if app_name not in ('IntelliJIdea', 'AndroidStudio'):
-            full_config_path = Path.home() / dirs[0] / 'config' / OLD_RELATIVE_CONFIG_PATH
-        else:
-            full_config_path = Path.home() / dirs[0] / 'config' / NEW_RELATIVE_CONFIG_PATH
-
-        if not full_config_path.exists():
-            return None
-    return full_config_path
+    # dirs contains possibly multiple directories for a program (eg. .GoLand2018.1 and .GoLand2017.3)
+    dirs = [f for f in xdg_dir.iterdir() if (xdg_dir / f).is_dir() and f.name.startswith(app_name)]
+    # take the newest
+    dirs.sort(reverse=True)
+    if not dirs:
+        return None
+    return xdg_dir / dirs[0] / 'options/recentProjects.xml'
 
 
 # The entry point for the plugin, will be called by albert.
