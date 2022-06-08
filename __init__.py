@@ -83,10 +83,10 @@ def handleQuery(query):
     projects = []
 
     for app_name, icon_name, _desktop_file in IDE_CONFIGS:
-        full_config_path = find_config_path(app_name)
-        if full_config_path is None:
+        config_path = find_config_path(app_name)
+        if config_path is None:
             continue
-        projects.extend([[timestamp, path, app_name] for timestamp, path in get_recent_projects(full_config_path)])
+        projects.extend([[timestamp, path, app_name] for timestamp, path in get_recent_projects(config_path)])
 
     # List all projects or the one corresponding to the query
     if query.string:
