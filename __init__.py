@@ -17,21 +17,14 @@ __authors__ = 'Markus Richter, Thomas Queste'
 default_icon = str(Path(__file__).parent / 'icons/jetbrains.svg')
 
 JETBRAINS_XDG_CONFIG_DIR = Path.home() / '.config/JetBrains'
-GOOGLE_XDG_CONFIG_DIR = Path.home() / '.config/Google'
 
 paths = [  # <Name for config directory>, <possible names for the binary/icon>
-    ['AndroidStudio', 'android-studio'],
     ['CLion', 'clion'],
-    ['DataGrip', 'datagrip'],
-    ['GoLand', 'goland'],
     [
         'IntelliJIdea',
         'intellij-idea-ue-bundled-jre intellij-idea-ultimate-edition idea-ce-eap idea-ue-eap idea idea-ultimate',
     ],
-    ['PhpStorm', 'phpstorm'],
     ['PyCharm', 'pycharm pycharm-eap charm'],
-    ['RubyMine', 'rubymine jetbrains-rubymine jetbrains-rubymine-eap'],
-    ['WebStorm', 'webstorm'],
 ]
 
 
@@ -80,8 +73,7 @@ def get_proj(path):
 
 # finds the actual path to the relevant xml file of the most recent configuration directory
 def find_config_path(app_name: str):
-    xdg_dir = GOOGLE_XDG_CONFIG_DIR if app_name == 'AndroidStudio' else JETBRAINS_XDG_CONFIG_DIR
-
+    xdg_dir = JETBRAINS_XDG_CONFIG_DIR
     if not xdg_dir.is_dir():
         return None
 
