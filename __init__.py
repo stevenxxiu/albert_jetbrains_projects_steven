@@ -15,7 +15,7 @@ __version__ = '0.4.5'
 __triggers__ = 'jb '
 __authors__ = 'Markus Richter, Thomas Queste'
 
-default_icon = os.path.dirname(__file__) + '/jetbrains.svg'
+default_icon = os.path.dirname(__file__) + '/icons/jetbrains.svg'
 HOME_DIR = os.environ['HOME']
 
 JETBRAINS_XDG_CONFIG_DIR = os.path.join(HOME_DIR, '.config/JetBrains')
