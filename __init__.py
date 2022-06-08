@@ -38,11 +38,12 @@ def get_recent_projects(path):
     additional_info = None
     path_to_timestamp = {}
     for option_tag in root[0]:  # type:ElementTree.Element
-        if option_tag.attrib['name'] == 'recentPaths':
-            for recent_path in option_tag[0]:
-                path_to_timestamp[recent_path.attrib['value']] = 0
-        elif option_tag.attrib['name'] == 'additionalInfo':
-            additional_info = option_tag[0]
+        match option_tag.attrib['name']:
+            case 'recentPaths':
+                for recent_path in option_tag[0]:
+                    path_to_timestamp[recent_path.attrib['value']] = 0
+            case 'additionalInfo':
+                additional_info = option_tag[0]
 
     # For all `additionalInfo` entries, also add the real timestamp
     if additional_info is not None:
