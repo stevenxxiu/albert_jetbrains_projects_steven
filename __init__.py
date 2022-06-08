@@ -92,7 +92,7 @@ def handleQuery(query):
 
     # List all projects or the one corresponding to the query
     if query.string:
-        projects = [p for p in projects if p[1].lower().find(query.string.lower()) != -1]
+        projects = [p for p in projects if query.string.lower() in p[1].lower()]
 
     # Disable automatic sorting
     query.disableSort()
