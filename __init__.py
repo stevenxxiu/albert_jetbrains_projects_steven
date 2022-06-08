@@ -18,13 +18,10 @@ default_icon = str(Path(__file__).parent / 'icons/jetbrains.svg')
 
 JETBRAINS_XDG_CONFIG_DIR = Path.home() / '.config/JetBrains'
 
-paths = [  # <Name for config directory>, <possible names for the binary/icon>
-    ['CLion', 'clion'],
-    [
-        'IntelliJIdea',
-        'intellij-idea-ue-bundled-jre intellij-idea-ultimate-edition idea-ce-eap idea-ue-eap idea idea-ultimate',
-    ],
-    ['PyCharm', 'pycharm pycharm-eap charm'],
+paths = [  # <Name for config directory>, <Icon name>
+    ('CLion', 'clion'),
+    ('IntelliJIdea', 'idea'),
+    ('PyCharm', 'pycharm'),
 ]
 
 
