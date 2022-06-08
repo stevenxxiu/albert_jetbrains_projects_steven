@@ -35,27 +35,27 @@ def get_recent_projects(path):
     :return: All recent project paths and the time they were last open.
     '''
     root = ElementTree.parse(path).getroot()  # type:ElementTree.Element
-    add_info = None
-    path2timestamp = {}
+    additional_info = None
+    path_to_timestamp = {}
     for option_tag in root[0]:  # type:ElementTree.Element
         if option_tag.attrib['name'] == 'recentPaths':
             for recent_path in option_tag[0]:
-                path2timestamp[recent_path.attrib['value']] = 0
+                path_to_timestamp[recent_path.attrib['value']] = 0
         elif option_tag.attrib['name'] == 'additionalInfo':
-            add_info = option_tag[0]
+            additional_info = option_tag[0]
 
     # For all `additionalInfo` entries, also add the real timestamp
-    if add_info is not None:
-        for entry_tag in add_info:
+    if additional_info is not None:
+        for entry_tag in additional_info:
             for option_tag in entry_tag[0][0]:
                 if (
                     option_tag.tag == 'option'
                     and 'name' in option_tag.attrib
                     and option_tag.attrib['name'] == 'projectOpenTimestamp'
                 ):
-                    path2timestamp[entry_tag.attrib['key']] = int(option_tag.attrib['value'])
+                    path_to_timestamp[entry_tag.attrib['key']] = int(option_tag.attrib['value'])
 
-    return [(timestamp, path.replace('$USER_HOME$', str(Path.home()))) for path, timestamp in path2timestamp.items()]
+    return [(timestamp, path.replace('$USER_HOME$', str(Path.home()))) for path, timestamp in path_to_timestamp.items()]
 
 
 def find_config_path(app_name: str):
@@ -112,7 +112,7 @@ def handleQuery(query):
         if not desktop_file:
             continue
 
-        output_entry = Item(
+        item = Item(
             id=f'{now - last_update:015d}-{project_path}-{app_name}',
             icon=icons[app_name],
             text=project_dir,
@@ -120,6 +120,6 @@ def handleQuery(query):
             completion=__triggers__ + project_dir,
             actions=[ProcAction(text=f'Open in {app_name}', commandline=['gtk-launch', desktop_file, project_path])],
         )
-        items.append(output_entry)
+        items.append(item)
 
     return items
