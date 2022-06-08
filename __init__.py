@@ -17,7 +17,8 @@ default_icon = str(Path(__file__).parent / 'icons/jetbrains.svg')
 
 JETBRAINS_XDG_CONFIG_DIR = Path.home() / '.config/JetBrains'
 
-IDE_CONFIGS = [  # <App name>, <Icon name>, <Desktop file name>
+# `[(app_name, icon_name, desktop_file)]`
+IDE_CONFIGS = [
     ('CLion', 'clion', 'jetbrains-clion.desktop'),
     ('IntelliJIdea', 'idea', 'jetbrains-idea.desktop'),
     ('PyCharm', 'pycharm', 'pycharm-professional.desktop'),
@@ -28,8 +29,11 @@ def find_icons():
     return {app_name: iconLookup(icon_name) or default_icon for app_name, icon_name, desktop_file in IDE_CONFIGS}
 
 
-# parse the xml at path, return all recent project paths and the time they were last open
-def get_proj(path):
+def get_recent_projects(path):
+    '''
+    :param path: Parse the xml at `path`.
+    :return: All recent project paths and the time they were last open.
+    '''
     root = ElementTree.parse(path).getroot()  # type:ElementTree.Element
     add_info = None
     path2timestamp = {}
@@ -40,7 +44,7 @@ def get_proj(path):
         elif option_tag.attrib['name'] == 'additionalInfo':
             add_info = option_tag[0]
 
-    # for all additionalInfo entries, also add the real timestamp.
+    # For all `additionalInfo` entries, also add the real timestamp
     if add_info is not None:
         for entry_tag in add_info:
             for option_tag in entry_tag[0][0]:
@@ -54,45 +58,48 @@ def get_proj(path):
     return [(timestamp, path.replace('$USER_HOME$', str(Path.home()))) for path, timestamp in path2timestamp.items()]
 
 
-# finds the actual path to the relevant xml file of the most recent configuration directory
 def find_config_path(app_name: str):
+    '''
+    :param app_name:
+    :return: The actual path to the relevant xml file, of the most recent configuration directory.
+    '''
     xdg_dir = JETBRAINS_XDG_CONFIG_DIR
     if not xdg_dir.is_dir():
         return None
 
-    # dirs contains possibly multiple directories for a program (eg. .GoLand2018.1 and .GoLand2017.3)
+    # Dirs contains possibly multiple directories for a program, e.g.
+    #
+    # - `~/.config/JetBrains/PyCharm2021.3/`
+    # - `~/.config/JetBrains/PyCharm2022.1/`
     dirs = [f for f in xdg_dir.iterdir() if (xdg_dir / f).is_dir() and f.name.startswith(app_name)]
-    # take the newest
+    # Take the newest
     dirs.sort(reverse=True)
     if not dirs:
         return None
     return xdg_dir / dirs[0] / 'options/recentProjects.xml'
 
 
-# The entry point for the plugin, will be called by albert.
 def handleQuery(query):
     if not query.isTriggered:
         return None
     desktop_files = {app_name: desktop_file for app_name, icon_name, desktop_file in IDE_CONFIGS}
     icons = find_icons()
-    # an array of tuples representing the project([timestamp,path,app name])
+    # `[(project_timestamp, project_path, app_name)]`
     projects = []
 
     for app_name, icon_name, _desktop_file in IDE_CONFIGS:
-        # get configuration file path
         full_config_path = find_config_path(app_name)
         if full_config_path is None:
             continue
-        # add all recently opened projects
-        projects.extend([[e[0], e[1], app_name] for e in get_proj(full_config_path)])
+        projects.extend([[e[0], e[1], app_name] for e in get_recent_projects(full_config_path)])
 
     # List all projects or the one corresponding to the query
     if query.string:
         projects = [p for p in projects if p[1].lower().find(query.string.lower()) != -1]
 
-    # disable automatic sorting
+    # Disable automatic sorting
     query.disableSort()
-    # sort by last modified, most recent first.
+    # Sort by last modified. Most recent first.
     projects.sort(key=lambda s: s[0], reverse=True)
 
     items = []
