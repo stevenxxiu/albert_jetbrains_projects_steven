@@ -8,10 +8,10 @@ from xml.etree import ElementTree
 from albert import Item, ProcAction, iconLookup  # pylint: disable=import-error
 
 
-__title__ = 'Jetbrains IDE Projects'
-__version__ = '0.4.5'
+__title__ = 'JetBrains Projects User'
+__version__ = '0.4.6'
 __triggers__ = 'jb '
-__authors__ = 'Markus Richter, Thomas Queste'
+__authors__ = ['Steven Xu', 'Markus Richter', 'Thomas Queste']
 
 default_icon = str(Path(__file__).parent / 'icons/jetbrains.svg')
 
