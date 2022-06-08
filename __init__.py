@@ -48,11 +48,7 @@ def get_recent_projects(path):
     if additional_info is not None:
         for entry_tag in additional_info:
             for option_tag in entry_tag[0][0]:
-                if (
-                    option_tag.tag == 'option'
-                    and 'name' in option_tag.attrib
-                    and option_tag.attrib['name'] == 'projectOpenTimestamp'
-                ):
+                if option_tag.tag == 'option' and option_tag.attrib.get('name', None) == 'projectOpenTimestamp':
                     path_to_timestamp[entry_tag.attrib['key']] = int(option_tag.attrib['value'])
 
     return [(timestamp, path.replace('$USER_HOME$', str(Path.home()))) for path, timestamp in path_to_timestamp.items()]
