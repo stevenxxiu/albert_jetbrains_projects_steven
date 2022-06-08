@@ -3,7 +3,6 @@
 '''List and open JetBrains IDE projects.'''
 import time
 from pathlib import Path
-from shutil import which
 from xml.etree import ElementTree
 
 from albert import Item, ProcAction, iconLookup  # pylint: disable=import-error
@@ -18,28 +17,15 @@ default_icon = str(Path(__file__).parent / 'icons/jetbrains.svg')
 
 JETBRAINS_XDG_CONFIG_DIR = Path.home() / '.config/JetBrains'
 
-paths = [  # <Name for config directory>, <Icon name>
-    ('CLion', 'clion'),
-    ('IntelliJIdea', 'idea'),
-    ('PyCharm', 'pycharm'),
+IDE_CONFIGS = [  # <App name>, <Icon name>, <Desktop file name>
+    ('CLion', 'clion', 'jetbrains-clion.desktop'),
+    ('IntelliJIdea', 'idea', 'jetbrains-idea.desktop'),
+    ('PyCharm', 'pycharm', 'pycharm-professional.desktop'),
 ]
 
 
-# find the executable path and icon of a program described by space-separated lists of possible binary-names
-def find_exec(namestr: str):
-    for name in namestr.split(' '):
-        executable = which(name)
-        if executable:
-            break
-    else:
-        return None
-
-    for name in namestr.split(' '):
-        icon = iconLookup(name)
-        if icon:
-            return executable, icon
-
-    return executable, default_icon
+def find_icons():
+    return {app_name: iconLookup(icon_name) or default_icon for app_name, icon_name, desktop_file in IDE_CONFIGS}
 
 
 # parse the xml at path, return all recent project paths and the time they were last open
@@ -87,23 +73,18 @@ def find_config_path(app_name: str):
 def handleQuery(query):
     if not query.isTriggered:
         return None
-    # a dict which maps the app name to a tuple of executable path and icon.
-    binaries = {}
+    desktop_files = {app_name: desktop_file for app_name, icon_name, desktop_file in IDE_CONFIGS}
+    icons = find_icons()
     # an array of tuples representing the project([timestamp,path,app name])
     projects = []
 
-    for app in paths:
+    for app_name, icon_name, _desktop_file in IDE_CONFIGS:
         # get configuration file path
-        full_config_path = find_config_path(app[0])
-
+        full_config_path = find_config_path(app_name)
         if full_config_path is None:
             continue
-
-        # extract the binary name and icon
-        binaries[app[0]] = find_exec(app[1])
-
         # add all recently opened projects
-        projects.extend([[e[0], e[1], app[0]] for e in get_proj(full_config_path)])
+        projects.extend([[e[0], e[1], app_name] for e in get_proj(full_config_path)])
 
     # List all projects or the one corresponding to the query
     if query.string:
@@ -120,20 +101,17 @@ def handleQuery(query):
         if not Path(project_path).exists():
             continue
         project_dir = Path(project_path).name
-        binary = binaries[app_name]
-        if not binary:
+        desktop_file = desktop_files[app_name]
+        if not desktop_file:
             continue
-
-        executable = binary[0]
-        icon = binary[1]
 
         output_entry = Item(
             id=f'{now - last_update:015d}-{project_path}-{app_name}',
-            icon=icon,
+            icon=icons[app_name],
             text=project_dir,
             subtext=project_path,
             completion=__triggers__ + project_dir,
-            actions=[ProcAction(text=f'Open in {app_name}', commandline=[executable, project_path])],
+            actions=[ProcAction(text=f'Open in {app_name}', commandline=['gtk-launch', desktop_file, project_path])],
         )
         items.append(output_entry)
 
