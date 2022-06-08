@@ -68,12 +68,10 @@ def find_config_path(app_name: str):
     #
     # - `~/.config/JetBrains/PyCharm2021.3/`
     # - `~/.config/JetBrains/PyCharm2022.1/`
-    dirs = [f for f in xdg_dir.iterdir() if (xdg_dir / f).is_dir() and f.name.startswith(app_name)]
-    # Take the newest
-    dirs.sort(reverse=True)
-    if not dirs:
-        return None
-    return xdg_dir / dirs[0] / 'options/recentProjects.xml'
+    #
+    # Take the newest.
+    dir_name = max(f for f in xdg_dir.iterdir() if (xdg_dir / f).is_dir() and f.name.startswith(app_name))
+    return xdg_dir / dir_name / 'options/recentProjects.xml'
 
 
 def handleQuery(query):
