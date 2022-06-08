@@ -52,7 +52,10 @@ def get_recent_projects(path):
                 if option_tag.tag == 'option' and option_tag.attrib.get('name', None) == 'projectOpenTimestamp':
                     path_to_timestamp[entry_tag.attrib['key']] = int(option_tag.attrib['value'])
 
-    return [(timestamp, path.replace('$USER_HOME$', str(Path.home()))) for path, timestamp in path_to_timestamp.items()]
+    return [
+        (timestamp, Path(path.replace('$USER_HOME$', str(Path.home()))))
+        for path, timestamp in path_to_timestamp.items()
+    ]
 
 
 def find_config_path(app_name: str):
@@ -90,7 +93,7 @@ def handleQuery(query):
 
     # List all projects or the one corresponding to the query
     if query.string:
-        projects = [project for project in projects if query.string.lower() in project[1].lower()]
+        projects = [project for project in projects if query.string.lower() in str(project[1]).lower()]
 
     # Disable automatic sorting
     query.disableSort()
@@ -100,9 +103,9 @@ def handleQuery(query):
     items = []
     now = int(time.time() * 1000.0)
     for last_update, project_path, app_name in projects:
-        if not Path(project_path).exists():
+        if not project_path.exists():
             continue
-        project_dir = Path(project_path).name
+        project_dir = project_path.name
         desktop_file = desktop_files[app_name]
         if not desktop_file:
             continue
@@ -111,9 +114,11 @@ def handleQuery(query):
             id=f'{now - last_update:015d}-{project_path}-{app_name}',
             icon=icons[app_name],
             text=project_dir,
-            subtext=project_path,
+            subtext=str(project_path),
             completion=__triggers__ + project_dir,
-            actions=[ProcAction(text=f'Open in {app_name}', commandline=['gtk-launch', desktop_file, project_path])],
+            actions=[
+                ProcAction(text=f'Open in {app_name}', commandline=['gtk-launch', desktop_file, str(project_path)])
+            ],
         )
         items.append(item)
 
