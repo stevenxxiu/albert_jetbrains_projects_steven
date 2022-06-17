@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 '''List and open JetBrains IDE projects.'''
 import time
 from pathlib import Path
