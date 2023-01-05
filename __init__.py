@@ -1,47 +1,51 @@
-'''List and open JetBrains IDE projects.'''
 import time
 from pathlib import Path
+from typing import Dict, NamedTuple
 from xml.etree import ElementTree
 
-from albert import Item, ProcAction, iconLookup  # pylint: disable=import-error
+from albert import Action, Item, Query, QueryHandler, runDetachedProcess  # pylint: disable=import-error
 
 
-__title__ = 'JetBrains Projects User'
-__version__ = '0.4.6'
-__triggers__ = 'jb '
-__authors__ = ['Steven Xu', 'Markus Richter', 'Thomas Queste']
+md_iid = '0.5'
+md_version = '1.0'
+md_name = 'JetBrains Projects User'
+md_description = 'List and open JetBrains IDE projects.'
+md_url = 'https://github.com/stevenxxiu/albert_jetbrains_projects_user'
+md_maintainers = '@stevenxxiu'
 
-default_icon = str(Path(__file__).parent / 'icons/jetbrains.svg')
-
+ICON_PATH = str(Path(__file__).parent / 'icons/jetbrains.svg')
 JETBRAINS_XDG_CONFIG_DIR = Path.home() / '.config/JetBrains'
 
-# `[(app_name, icon_name, desktop_file)]`
-IDE_CONFIGS = [
-    ('CLion', 'clion', 'jetbrains-clion.desktop'),
-    ('IntelliJIdea', 'idea', 'jetbrains-idea.desktop'),
-    ('PyCharm', 'pycharm', 'pycharm-professional.desktop'),
-]
+
+class IdeConfig(NamedTuple):
+    icon_name: str
+    desktop_file: str
 
 
-def find_icons():
-    return {app_name: iconLookup(icon_name) or default_icon for app_name, icon_name, desktop_file in IDE_CONFIGS}
+IDE_CONFIGS: Dict[str, IdeConfig] = {
+    'CLion': IdeConfig(icon_name='/usr/share/pixmaps/clion.svg', desktop_file='jetbrains-clion.desktop'),
+    'IntelliJIdea': IdeConfig(
+        icon_name='/usr/share/pixmaps/intellij-idea-ultimate-edition.svg', desktop_file='jetbrains-idea.desktop'
+    ),
+    'PyCharm': IdeConfig(icon_name='xdg:pycharm', desktop_file='pycharm-professional.desktop'),
+}
 
 
-def get_recent_projects(path):
+def get_recent_projects(path: Path) -> list[(int, Path)]:
     '''
     :param path: Parse the xml at `path`.
     :return: All recent project paths and the time they were last open.
     '''
-    root = ElementTree.parse(path).getroot()  # type:ElementTree.Element
-    additional_info = None
-    path_to_timestamp = {}
-    for option_tag in root[0]:  # type:ElementTree.Element
+    root: ElementTree.Element = ElementTree.parse(path).getroot()
+    additional_info: ElementTree.Element | None = None
+    path_to_timestamp: dict[str, int] = {}
+    for option_tag in root[0]:
         match option_tag.attrib['name']:
             case 'recentPaths':
                 for recent_path in option_tag[0]:
                     path_to_timestamp[recent_path.attrib['value']] = 0
             case 'additionalInfo':
-                additional_info = option_tag[0]
+                additional_info = option_tag[0]  # `<map>`
 
     # For all `additionalInfo` entries, also add the real timestamp
     if additional_info is not None:
@@ -56,12 +60,12 @@ def get_recent_projects(path):
     ]
 
 
-def find_config_path(app_name: str):
+def find_config_path(app_name: str) -> Path | None:
     '''
     :param app_name:
     :return: The actual path to the relevant xml file, of the most recent configuration directory.
     '''
-    xdg_dir = JETBRAINS_XDG_CONFIG_DIR
+    xdg_dir: Path = JETBRAINS_XDG_CONFIG_DIR
     if not xdg_dir.is_dir():
         return None
 
@@ -71,53 +75,72 @@ def find_config_path(app_name: str):
     # - `~/.config/JetBrains/PyCharm2022.1/`
     #
     # Take the newest.
-    dir_name = max(f for f in xdg_dir.iterdir() if (xdg_dir / f).is_dir() and f.name.startswith(app_name))
+    dir_name: Path = max(f for f in xdg_dir.iterdir() if (xdg_dir / f).is_dir() and f.name.startswith(app_name))
     return xdg_dir / dir_name / 'options/recentProjects.xml'
 
 
-def handleQuery(query):
-    if not query.isTriggered:
-        return None
-    desktop_files = {app_name: desktop_file for app_name, icon_name, desktop_file in IDE_CONFIGS}
-    icons = find_icons()
-    # `[(project_timestamp, project_path, app_name)]`
-    projects = []
+class Plugin(QueryHandler):
+    @staticmethod
+    def id() -> str:
+        return __name__
 
-    for app_name, icon_name, _desktop_file in IDE_CONFIGS:
-        config_path = find_config_path(app_name)
-        if config_path is None:
-            continue
-        projects.extend([[timestamp, path, app_name] for timestamp, path in get_recent_projects(config_path)])
+    @staticmethod
+    def name() -> str:
+        return md_name
 
-    # List all projects or the one corresponding to the query
-    if query.string:
-        projects = [project for project in projects if query.string.lower() in str(project[1]).lower()]
+    @staticmethod
+    def description() -> str:
+        return md_description
 
-    # Disable automatic sorting
-    query.disableSort()
-    # Sort by last modified. Most recent first.
-    projects.sort(key=lambda s: s[0], reverse=True)
+    @staticmethod
+    def defaultTrigger() -> str:
+        return 'jb'
 
-    items = []
-    now = int(time.time() * 1000.0)
-    for last_update, project_path, app_name in projects:
-        if not project_path.exists():
-            continue
-        project_dir = project_path.name
-        desktop_file = desktop_files[app_name]
-        if not desktop_file:
-            continue
+    @staticmethod
+    def handleQuery(query: Query) -> None:
+        # `[(project_timestamp, project_path, app_name)]`
+        projects: list[(int, Path, str)] = []
 
-        item = Item(
-            id=f'{now - last_update:015d}-{project_path}-{app_name}',
-            icon=icons[app_name],
-            text=project_dir,
-            subtext=str(project_path),
-            completion=__triggers__ + project_dir,
-            actions=[
-                ProcAction(text=f'Open in {app_name}', commandline=['gtk-launch', desktop_file, str(project_path)])
-            ],
-        )
-        items.append(item)
+        for app_name in IDE_CONFIGS:
+            config_path = find_config_path(app_name)
+            if config_path is None:
+                continue
+            projects.extend([(timestamp, path, app_name) for timestamp, path in get_recent_projects(config_path)])
 
-    return items
+        # List all projects or the one corresponding to the query
+        if query.string:
+            projects = [project for project in projects if query.string.lower() in str(project[1]).lower()]
+
+        # Sort by last modified. Most recent first.
+        projects.sort(key=lambda s: s[0], reverse=True)
+
+        now = int(time.time() * 1000.0)
+
+        last_update: int
+        project_path: Path
+        app_name: str
+        for last_update, project_path, app_name in projects:
+            if not project_path.exists():
+                continue
+            project_dir = project_path.name
+            desktop_file = IDE_CONFIGS[app_name].desktop_file
+            if not desktop_file:
+                continue
+
+            item = Item(
+                id=f'{md_name}/{now - last_update:015d}/{project_path}/{app_name}',
+                text=project_dir,
+                subtext=str(project_path),
+                icon=[IDE_CONFIGS[app_name].icon_name, ICON_PATH],
+                completion=project_dir,
+                actions=[
+                    Action(
+                        f'{md_name}/{now - last_update:015d}/{project_path}/{app_name}',
+                        f'Open in {app_name}',
+                        lambda desktop_file_=desktop_file, project_path_=project_path: runDetachedProcess(
+                            ['gtk-launch', desktop_file_, str(project_path_)]
+                        ),
+                    )
+                ],
+            )
+            query.add(item)
