@@ -98,6 +98,8 @@ class Plugin(QueryHandler):
 
     @staticmethod
     def handleQuery(query: Query) -> None:
+        query_str = query.string.strip()
+
         # `[(project_timestamp, project_path, app_name)]`
         projects: list[(int, Path, str)] = []
 
@@ -108,8 +110,7 @@ class Plugin(QueryHandler):
             projects.extend([(timestamp, path, app_name) for timestamp, path in get_recent_projects(config_path)])
 
         # List all projects or the one corresponding to the query
-        if query.string:
-            projects = [project for project in projects if query.string.lower() in str(project[1]).lower()]
+        projects = [project for project in projects if query_str.lower() in str(project[1]).lower()]
 
         # Sort by last modified. Most recent first.
         projects.sort(key=lambda s: s[0], reverse=True)
