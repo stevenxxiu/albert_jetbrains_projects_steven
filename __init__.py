@@ -80,24 +80,19 @@ def find_config_path(app_name: str) -> Path | None:
 
 
 class Plugin(QueryHandler):
-    @staticmethod
-    def id() -> str:
+    def id(self) -> str:
         return __name__
 
-    @staticmethod
-    def name() -> str:
+    def name(self) -> str:
         return md_name
 
-    @staticmethod
-    def description() -> str:
+    def description(self) -> str:
         return md_description
 
-    @staticmethod
-    def defaultTrigger() -> str:
+    def defaultTrigger(self) -> str:
         return 'jb'
 
-    @staticmethod
-    def handleQuery(query: Query) -> None:
+    def handleQuery(self, query: Query) -> None:
         query_str = query.string.strip()
 
         # `[(project_timestamp, project_path, app_name)]`
