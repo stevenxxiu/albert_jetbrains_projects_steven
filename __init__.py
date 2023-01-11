@@ -129,7 +129,7 @@ class Plugin(QueryHandler):
                 text=project_dir,
                 subtext=str(project_path),
                 icon=[IDE_CONFIGS[app_name].icon_name, ICON_PATH],
-                completion=project_dir,
+                completion=f'{TRIGGER} {project_dir}',
                 actions=[
                     Action(
                         f'{md_name}/{now - last_update:015d}/{project_path}/{app_name}',
