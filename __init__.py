@@ -13,6 +13,7 @@ md_description = 'List and open JetBrains IDE projects.'
 md_url = 'https://github.com/stevenxxiu/albert_jetbrains_projects_steven'
 md_maintainers = '@stevenxxiu'
 
+TRIGGER = 'jb'
 ICON_PATH = str(Path(__file__).parent / 'icons/jetbrains.svg')
 JETBRAINS_XDG_CONFIG_DIR = Path.home() / '.config/JetBrains'
 
@@ -90,7 +91,7 @@ class Plugin(QueryHandler):
         return md_description
 
     def defaultTrigger(self) -> str:
-        return 'jb'
+        return f'{TRIGGER} '
 
     def handleQuery(self, query: Query) -> None:
         query_str = query.string.strip()
