@@ -24,10 +24,8 @@ class IdeConfig(NamedTuple):
 
 
 IDE_CONFIGS: Dict[str, IdeConfig] = {
-    'CLion': IdeConfig(icon_name='/usr/share/pixmaps/clion.svg', desktop_file='jetbrains-clion.desktop'),
-    'IntelliJIdea': IdeConfig(
-        icon_name='/usr/share/pixmaps/intellij-idea-ultimate-edition.svg', desktop_file='jetbrains-idea.desktop'
-    ),
+    'CLion': IdeConfig(icon_name='xdg:clion', desktop_file='jetbrains-clion.desktop'),
+    'IntelliJIdea': IdeConfig(icon_name='xdg:intellij-idea-ultimate-edition', desktop_file='jetbrains-idea.desktop'),
     'PyCharm': IdeConfig(icon_name='xdg:pycharm', desktop_file='pycharm-professional.desktop'),
 }
 
