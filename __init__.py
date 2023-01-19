@@ -1,6 +1,6 @@
 import time
 from pathlib import Path
-from typing import Dict, NamedTuple
+from typing import NamedTuple
 from xml.etree import ElementTree
 
 from albert import Action, Item, Query, QueryHandler, runDetachedProcess  # pylint: disable=import-error
@@ -23,7 +23,7 @@ class IdeConfig(NamedTuple):
     desktop_file: str
 
 
-IDE_CONFIGS: Dict[str, IdeConfig] = {
+IDE_CONFIGS: dict[str, IdeConfig] = {
     'CLion': IdeConfig(icon_name='xdg:clion', desktop_file='jetbrains-clion.desktop'),
     'IntelliJIdea': IdeConfig(icon_name='xdg:intellij-idea-ultimate-edition', desktop_file='jetbrains-idea.desktop'),
     'PyCharm': IdeConfig(icon_name='xdg:pycharm', desktop_file='pycharm-professional.desktop'),
