@@ -30,6 +30,12 @@ IDE_CONFIGS: dict[str, IdeConfig] = {
 }
 
 
+class IdeProject(NamedTuple):
+    timestamp: int
+    path: Path
+    app_name: str
+
+
 def get_recent_projects(path: Path) -> list[(int, Path)]:
     '''
     :param path: Parse the xml at `path`.
@@ -94,20 +100,34 @@ class Plugin(QueryHandler):
     def handleQuery(self, query: Query) -> None:
         query_str = query.string.strip()
 
-        # `[(project_timestamp, project_path, app_name)]`
-        projects: list[(int, Path, str)] = []
+        projects: list[IdeProject] = []
 
         for app_name in IDE_CONFIGS:
             config_path = find_config_path(app_name)
             if config_path is None:
                 continue
-            projects.extend([(timestamp, path, app_name) for timestamp, path in get_recent_projects(config_path)])
+            projects.extend(
+                [IdeProject(timestamp, path, app_name) for timestamp, path in get_recent_projects(config_path)]
+            )
 
         # List all projects or the one corresponding to the query
-        projects = [project for project in projects if query_str.lower() in str(project[1]).lower()]
+        projects = [project for project in projects if query_str.lower() in str(project.path).lower()]
+        if not projects:
+            return
 
-        # Sort by last modified. Most recent first.
-        projects.sort(key=lambda s: s[0], reverse=True)
+        # Rank projects
+        timestamp_ranks = sorted(range(len(projects)), key=lambda i: projects[i].timestamp)
+        path_to_timestamp_rank = {
+            project.path: timestamp_rank for project, timestamp_rank in zip(projects, timestamp_ranks)
+        }
+        projects.sort(
+            key=lambda project: (
+                path_to_timestamp_rank[project.path] / len(path_to_timestamp_rank)
+                + 2.0 * int(query_str in project.path.name)
+                + 1.0 * int(query_str in str(project.path.parent))
+            ),
+            reverse=True,
+        )
 
         now = int(time.time() * 1000.0)
 
