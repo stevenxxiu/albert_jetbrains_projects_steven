@@ -9,7 +9,7 @@ from albert import Action, Item, Query, QueryHandler, runDetachedProcess  # pyli
 md_iid = '0.5'
 md_version = '1.0'
 md_name = 'JetBrains Projects Steven'
-md_description = 'List and open JetBrains IDE projects.'
+md_description = 'List and open JetBrains IDE projects'
 md_url = 'https://github.com/stevenxxiu/albert_jetbrains_projects_steven'
 md_maintainers = '@stevenxxiu'
 
