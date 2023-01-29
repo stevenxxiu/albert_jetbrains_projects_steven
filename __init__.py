@@ -13,7 +13,6 @@ md_description = 'List and open JetBrains IDE projects'
 md_url = 'https://github.com/stevenxxiu/albert_jetbrains_projects_steven'
 md_maintainers = '@stevenxxiu'
 
-TRIGGER = 'jb'
 ICON_PATH = str(Path(__file__).parent / 'icons/jetbrains.svg')
 JETBRAINS_XDG_CONFIG_DIR = Path.home() / '.config/JetBrains'
 
@@ -95,7 +94,7 @@ class Plugin(QueryHandler):
         return md_description
 
     def defaultTrigger(self) -> str:
-        return f'{TRIGGER} '
+        return 'jb '
 
     def handleQuery(self, query: Query) -> None:
         query_str = query.string.strip()
@@ -147,7 +146,7 @@ class Plugin(QueryHandler):
                 text=project_dir,
                 subtext=str(project_path),
                 icon=[IDE_CONFIGS[app_name].icon_name, ICON_PATH],
-                completion=f'{TRIGGER} {project_dir}',
+                completion=f'{query.trigger}{project_dir}',
                 actions=[
                     Action(
                         f'{md_name}/{now - last_update:015d}/{project_path}/{app_name}',
