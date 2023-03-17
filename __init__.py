@@ -114,16 +114,18 @@ class Plugin(QueryHandler):
         if not projects:
             return
 
-        # Rank projects
-        timestamp_ranks = sorted(range(len(projects)), key=lambda i: projects[i].timestamp)
+        # The projects accessed the most recently comes first
+        timestamp_ranks = sorted(range(len(projects)), key=lambda i: -projects[i].timestamp)
         path_to_timestamp_rank = {
             project.path: timestamp_rank for project, timestamp_rank in zip(projects, timestamp_ranks)
         }
+
+        # Rank projects
         projects.sort(
             key=lambda project: (
-                path_to_timestamp_rank[project.path] / len(path_to_timestamp_rank)
+                (1 - path_to_timestamp_rank[project.path] / len(path_to_timestamp_rank))
                 + 2.0 * int(query_str in project.path.name)
-                + 1.0 * int(query_str in str(project.path.parent))
+                + 1.0 * int(f'/{query_str}' in str(project.path.parent))
             ),
             reverse=True,
         )
