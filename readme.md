@@ -1,4 +1,6 @@
 # Albert Launcher JetBrains Extension
+List and open *JetBrains* IDE projects.
+
 ## Install
 To install, copy or symlink this directory to `~/.local/share/albert/org.albert.extension.python/modules/jetbrains_projects_steven/`.
 
