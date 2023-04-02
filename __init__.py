@@ -30,9 +30,10 @@ IDE_CONFIGS: dict[str, IdeConfig] = {
 
 
 class IdeProject(NamedTuple):
-    timestamp: int
+    name: str
     path: Path
     app_name: str
+    timestamp: int
 
 
 def get_recent_projects(path: Path) -> list[(int, Path)]:
@@ -83,6 +84,14 @@ def find_config_path(app_name: str) -> Path | None:
     return xdg_dir / dir_name / 'options/recentProjects.xml'
 
 
+def get_project_name(path: Path) -> str:
+    try:
+        with (path / '.idea/.name').open('r') as sr:
+            return sr.read()
+    except IOError:
+        return path.name
+
+
 class Plugin(QueryHandler):
     def id(self) -> str:
         return __name__
@@ -106,7 +115,10 @@ class Plugin(QueryHandler):
             if config_path is None:
                 continue
             projects.extend(
-                [IdeProject(timestamp, path, app_name) for timestamp, path in get_recent_projects(config_path)]
+                [
+                    IdeProject(get_project_name(path), path, app_name, timestamp)
+                    for timestamp, path in get_recent_projects(config_path)
+                ]
             )
 
         # List all projects or the one corresponding to the query
@@ -124,7 +136,7 @@ class Plugin(QueryHandler):
         projects.sort(
             key=lambda project: (
                 (1 - path_to_timestamp_rank[project.path] / len(path_to_timestamp_rank))
-                + 2.0 * int(query_str in project.path.name)
+                + 2.0 * int(query_str in project.name)
                 + 1.0 * int(f'/{query_str}' in str(project.path.parent))
             ),
             reverse=True,
@@ -135,20 +147,19 @@ class Plugin(QueryHandler):
         last_update: int
         project_path: Path
         app_name: str
-        for last_update, project_path, app_name in projects:
+        for project_name, project_path, app_name, last_update in projects:
             if not project_path.exists():
                 continue
-            project_dir = project_path.name
             desktop_file = IDE_CONFIGS[app_name].desktop_file
             if not desktop_file:
                 continue
 
             item = Item(
                 id=f'{md_name}/{now - last_update:015d}/{project_path}/{app_name}',
-                text=project_dir,
+                text=project_name,
                 subtext=str(project_path),
                 icon=[IDE_CONFIGS[app_name].icon_name, ICON_PATH],
-                completion=f'{query.trigger}{project_dir}',
+                completion=f'{query.trigger}{project_name}',
                 actions=[
                     Action(
                         f'{md_name}/{now - last_update:015d}/{project_path}/{app_name}',
