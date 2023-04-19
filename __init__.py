@@ -123,14 +123,10 @@ class Plugin(QueryHandler):
 
         # List all projects or the one corresponding to the query
         projects = [project for project in projects if query_str.lower() in str(project.path).lower()]
-        if not projects:
-            return
 
         # The projects accessed the most recently comes first
-        timestamp_ranks = sorted(range(len(projects)), key=lambda i: -projects[i].timestamp)
-        path_to_timestamp_rank = {
-            project.path: timestamp_rank for project, timestamp_rank in zip(projects, timestamp_ranks)
-        }
+        projects.sort(key=lambda project: -project.timestamp)
+        path_to_timestamp_rank = {project.path: i for i, project in enumerate(projects)}
 
         # Rank projects
         projects.sort(
