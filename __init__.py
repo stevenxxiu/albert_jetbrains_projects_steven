@@ -3,17 +3,24 @@ from pathlib import Path
 from typing import NamedTuple
 from xml.etree import ElementTree
 
-from albert import Action, Item, TriggerQuery, TriggerQueryHandler, runDetachedProcess  # pylint: disable=import-error
+from albert import (  # pylint: disable=import-error
+    Action,
+    PluginInstance,
+    StandardItem,
+    TriggerQuery,
+    TriggerQueryHandler,
+    runDetachedProcess,
+)
 
 
-md_iid = '1.0'
-md_version = '1.1'
+md_iid = '2.0'
+md_version = '1.2'
 md_name = 'JetBrains Projects Steven'
 md_description = 'List and open JetBrains IDE projects'
 md_url = 'https://github.com/stevenxxiu/albert_jetbrains_projects_steven'
 md_maintainers = '@stevenxxiu'
 
-ICON_PATH = str(Path(__file__).parent / 'icons/jetbrains.svg')
+ICON_URL = f'file:{Path(__file__).parent / "icons/jetbrains.svg"}'
 JETBRAINS_XDG_CONFIG_DIR = Path.home() / '.config/JetBrains'
 
 
@@ -92,18 +99,10 @@ def get_project_name(path: Path) -> str:
         return path.name
 
 
-class Plugin(TriggerQueryHandler):
-    def id(self) -> str:
-        return __name__
-
-    def name(self) -> str:
-        return md_name
-
-    def description(self) -> str:
-        return md_description
-
-    def defaultTrigger(self) -> str:
-        return 'jb '
+class Plugin(PluginInstance, TriggerQueryHandler):
+    def __init__(self):
+        TriggerQueryHandler.__init__(self, id=__name__, name=md_name, description=md_description, defaultTrigger='jb ')
+        PluginInstance.__init__(self, extensions=[self])
 
     def handleTriggerQuery(self, query: TriggerQuery) -> None:
         query_str = query.string.strip()
@@ -150,12 +149,11 @@ class Plugin(TriggerQueryHandler):
             if not desktop_file:
                 continue
 
-            item = Item(
+            item = StandardItem(
                 id=f'{md_name}/{now - last_update:015d}/{project_path}/{app_name}',
                 text=project_name,
                 subtext=str(project_path),
-                icon=[IDE_CONFIGS[app_name].icon_name, ICON_PATH],
-                completion=f'{query.trigger}{project_name}',
+                iconUrls=[IDE_CONFIGS[app_name].icon_name, ICON_URL],
                 actions=[
                     Action(
                         f'{md_name}/{now - last_update:015d}/{project_path}/{app_name}',
