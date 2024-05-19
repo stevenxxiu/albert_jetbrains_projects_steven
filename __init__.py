@@ -43,7 +43,7 @@ class IdeProject(NamedTuple):
     timestamp: int
 
 
-def get_recent_projects(path: Path) -> list[(int, Path)]:
+def get_recent_projects(path: Path) -> list[tuple[int, Path]]:
     '''
     :param path: Parse the xml at `path`.
     :return: All recent project paths and the time they were last open.
