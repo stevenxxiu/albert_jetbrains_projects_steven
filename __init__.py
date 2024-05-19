@@ -87,7 +87,10 @@ def find_config_path(app_name: str) -> Path | None:
     # - `~/.config/JetBrains/PyCharm2022.1/`
     #
     # Take the newest.
-    dir_name: Path = max(f for f in xdg_dir.iterdir() if (xdg_dir / f).is_dir() and f.name.startswith(app_name))
+    try:
+        dir_name: Path = max(f for f in xdg_dir.iterdir() if (xdg_dir / f).is_dir() and f.name.startswith(app_name))
+    except ValueError:
+        return None
     return xdg_dir / dir_name / 'options/recentProjects.xml'
 
 
