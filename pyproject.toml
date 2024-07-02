@@ -24,13 +24,11 @@ force_grid_wrap = 0
 [tool.pylint]
 disable = [
     'invalid-name',
-    'missing-class-docstring',
-    'missing-function-docstring',
-    'missing-module-docstring',
+    'missing-docstring',
     'no-member',
     'too-few-public-methods',
     'too-many-ancestors',
-]
+  ]
 good-names = ['sr']
 max-line-length = 120
 
