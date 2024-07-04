@@ -7,14 +7,13 @@ from albert import (  # pylint: disable=import-error
     Action,
     PluginInstance,
     StandardItem,
-    TriggerQuery,
     TriggerQueryHandler,
     runDetachedProcess,
 )
 
 
-md_iid = '2.0'
-md_version = '1.2'
+md_iid = '2.3'
+md_version = '1.3'
 md_name = 'JetBrains Projects Steven'
 md_description = 'List and open JetBrains IDE projects'
 md_url = 'https://github.com/stevenxxiu/albert_jetbrains_projects_steven'
@@ -105,9 +104,9 @@ def get_project_name(path: Path) -> str:
 class Plugin(PluginInstance, TriggerQueryHandler):
     def __init__(self):
         TriggerQueryHandler.__init__(self, id=__name__, name=md_name, description=md_description, defaultTrigger='jb ')
-        PluginInstance.__init__(self, extensions=[self])
+        PluginInstance.__init__(self)
 
-    def handleTriggerQuery(self, query: TriggerQuery) -> None:
+    def handleTriggerQuery(self, query) -> None:
         query_str = query.string.strip()
 
         projects: list[IdeProject] = []
