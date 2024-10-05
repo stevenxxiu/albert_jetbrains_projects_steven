@@ -2,7 +2,7 @@
 List and open *JetBrains* IDE projects.
 
 ## Install
-To install, copy or symlink this directory to `~/.local/share/albert/org.albert.extension.python/modules/jetbrains_projects_steven/`.
+To install, copy or symlink this directory to `~/.local/share/albert/python/plugins/jetbrains_projects_steven/`.
 
 ## Development Setup
 To setup the project for development, run:
