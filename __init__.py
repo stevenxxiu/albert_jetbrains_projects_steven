@@ -5,6 +5,7 @@ from xml.etree import ElementTree
 
 from albert import (  # pylint: disable=import-error
     Action,
+    Matcher,
     PluginInstance,
     StandardItem,
     TriggerQueryHandler,
@@ -43,10 +44,10 @@ class IdeProject(NamedTuple):
 
 
 def get_recent_projects(path: Path) -> list[tuple[int, Path]]:
-    '''
+    """
     :param path: Parse the xml at `path`.
     :return: All recent project paths and the time they were last open.
-    '''
+    """
     root: ElementTree.Element = ElementTree.parse(path).getroot()
     additional_info: ElementTree.Element | None = None
     path_to_timestamp: dict[str, int] = {}
@@ -72,10 +73,10 @@ def get_recent_projects(path: Path) -> list[tuple[int, Path]]:
 
 
 def find_config_path(app_name: str) -> Path | None:
-    '''
+    """
     :param app_name:
     :return: The actual path to the relevant xml file, of the most recent configuration directory.
-    '''
+    """
     xdg_dir: Path = JETBRAINS_XDG_CONFIG_DIR
     if not xdg_dir.is_dir():
         return None
@@ -107,7 +108,7 @@ class Plugin(PluginInstance, TriggerQueryHandler):
         PluginInstance.__init__(self)
 
     def handleTriggerQuery(self, query) -> None:
-        query_str = query.string.strip()
+        matcher = Matcher(query.string)
 
         projects: list[IdeProject] = []
 
@@ -123,28 +124,27 @@ class Plugin(PluginInstance, TriggerQueryHandler):
             )
 
         # List all projects or the one corresponding to the query
-        projects = [project for project in projects if query_str.lower() in str(project.path).lower()]
+        projects = [project for project in projects if matcher.match(str(project.path))]
 
         # The projects accessed the most recently comes first
         projects.sort(key=lambda project: -project.timestamp)
-        path_to_timestamp_rank = {project.path: i for i, project in enumerate(projects)}
 
-        # Rank projects
-        projects.sort(
-            key=lambda project: (
-                (1 - path_to_timestamp_rank[project.path] / len(path_to_timestamp_rank))
-                + 2.0 * int(query_str in project.name)
-                + 1.0 * int(f'/{query_str}' in str(project.path.parent))
-            ),
-            reverse=True,
-        )
+        projects_with_score = []
+        for i, project in enumerate(projects):
+            score = (1 - i) / len(projects)
+            if matcher.match(project.name):
+                score += 2.0
+            if matcher.match(str(project.path.parent)):
+                score += 1.0
+            projects_with_score.append((project, score))
+        projects_with_score.sort(key=lambda t: t[1], reverse=True)
 
         now = int(time.time() * 1000.0)
 
         last_update: int
         project_path: Path
         app_name: str
-        for project_name, project_path, app_name, last_update in projects:
+        for (project_name, project_path, app_name, last_update), _ in projects_with_score:
             if not project_path.exists():
                 continue
             desktop_file = IDE_CONFIGS[app_name].desktop_file
