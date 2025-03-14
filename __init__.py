@@ -20,9 +20,7 @@ md_license = 'MIT'
 md_url = 'https://github.com/stevenxxiu/albert_jetbrains_projects_steven'
 md_authors = ['@stevenxxiu']
 
-JETBRAINS_ICON_URL = f'file:{Path(__file__).parent / "icons/jetbrains.svg"}'
 ANDROID_STUDIO_ICON_URL = f'file:{Path(__file__).parent / "icons/studio.svg"}'
-JETBRAINS_XDG_CONFIG_DIR = Path.home() / '.config/JetBrains'
 GOOGLE_XDG_CONFIG_DIR = Path.home() / '.config/Google'
 
 
@@ -37,21 +35,6 @@ IDE_CONFIGS: dict[str, IdeConfig] = {
         icon_urls=['xdg:studio', ANDROID_STUDIO_ICON_URL],
         desktop_file='android-studio.desktop',
         parent_config_dir=GOOGLE_XDG_CONFIG_DIR,
-    ),
-    'CLion': IdeConfig(
-        icon_urls=['xdg:clion', JETBRAINS_ICON_URL],
-        desktop_file='jetbrains-clion.desktop',
-        parent_config_dir=JETBRAINS_XDG_CONFIG_DIR,
-    ),
-    'IntelliJIdea': IdeConfig(
-        icon_urls=['xdg:intellij-idea-ultimate-edition', JETBRAINS_ICON_URL],
-        desktop_file='jetbrains-idea.desktop',
-        parent_config_dir=JETBRAINS_XDG_CONFIG_DIR,
-    ),
-    'PyCharm': IdeConfig(
-        icon_urls=['xdg:pycharm', JETBRAINS_ICON_URL],
-        desktop_file='pycharm-professional.desktop',
-        parent_config_dir=JETBRAINS_XDG_CONFIG_DIR,
     ),
 }
 
