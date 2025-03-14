@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import NamedTuple
 from xml.etree import ElementTree
 
-from albert import (  # pylint: disable=import-error
+from albert import (
     Action,
     Matcher,
     PluginInstance,
@@ -12,13 +12,13 @@ from albert import (  # pylint: disable=import-error
     runDetachedProcess,
 )
 
-
-md_iid = '2.3'
-md_version = '1.3'
+md_iid = '3.0'
+md_version = '1.4'
 md_name = 'JetBrains Projects Steven'
 md_description = 'List and open JetBrains IDE projects'
+md_license = 'MIT'
 md_url = 'https://github.com/stevenxxiu/albert_jetbrains_projects_steven'
-md_maintainers = '@stevenxxiu'
+md_authors = ['@stevenxxiu']
 
 ICON_URL = f'file:{Path(__file__).parent / "icons/jetbrains.svg"}'
 JETBRAINS_XDG_CONFIG_DIR = Path.home() / '.config/JetBrains'
@@ -104,8 +104,11 @@ def get_project_name(path: Path) -> str:
 
 class Plugin(PluginInstance, TriggerQueryHandler):
     def __init__(self):
-        TriggerQueryHandler.__init__(self, id=__name__, name=md_name, description=md_description, defaultTrigger='jb ')
         PluginInstance.__init__(self)
+        TriggerQueryHandler.__init__(self)
+
+    def defaultTrigger(self):
+        return 'jb '
 
     def handleTriggerQuery(self, query) -> None:
         matcher = Matcher(query.string)
