@@ -20,19 +20,39 @@ md_license = 'MIT'
 md_url = 'https://github.com/stevenxxiu/albert_jetbrains_projects_steven'
 md_authors = ['@stevenxxiu']
 
-ICON_URL = f'file:{Path(__file__).parent / "icons/jetbrains.svg"}'
+JETBRAINS_ICON_URL = f'file:{Path(__file__).parent / "icons/jetbrains.svg"}'
+ANDROID_STUDIO_ICON_URL = f'file:{Path(__file__).parent / "icons/studio.svg"}'
 JETBRAINS_XDG_CONFIG_DIR = Path.home() / '.config/JetBrains'
+GOOGLE_XDG_CONFIG_DIR = Path.home() / '.config/Google'
 
 
 class IdeConfig(NamedTuple):
-    icon_name: str
+    icon_urls: list[str]
     desktop_file: str
+    parent_config_dir: Path
 
 
 IDE_CONFIGS: dict[str, IdeConfig] = {
-    'CLion': IdeConfig(icon_name='xdg:clion', desktop_file='jetbrains-clion.desktop'),
-    'IntelliJIdea': IdeConfig(icon_name='xdg:intellij-idea-ultimate-edition', desktop_file='jetbrains-idea.desktop'),
-    'PyCharm': IdeConfig(icon_name='xdg:pycharm', desktop_file='pycharm-professional.desktop'),
+    'AndroidStudio': IdeConfig(
+        icon_urls=['xdg:studio', ANDROID_STUDIO_ICON_URL],
+        desktop_file='android-studio.desktop',
+        parent_config_dir=GOOGLE_XDG_CONFIG_DIR,
+    ),
+    'CLion': IdeConfig(
+        icon_urls=['xdg:clion', JETBRAINS_ICON_URL],
+        desktop_file='jetbrains-clion.desktop',
+        parent_config_dir=JETBRAINS_XDG_CONFIG_DIR,
+    ),
+    'IntelliJIdea': IdeConfig(
+        icon_urls=['xdg:intellij-idea-ultimate-edition', JETBRAINS_ICON_URL],
+        desktop_file='jetbrains-idea.desktop',
+        parent_config_dir=JETBRAINS_XDG_CONFIG_DIR,
+    ),
+    'PyCharm': IdeConfig(
+        icon_urls=['xdg:pycharm', JETBRAINS_ICON_URL],
+        desktop_file='pycharm-professional.desktop',
+        parent_config_dir=JETBRAINS_XDG_CONFIG_DIR,
+    ),
 }
 
 
@@ -72,12 +92,12 @@ def get_recent_projects(path: Path) -> list[tuple[int, Path]]:
     ]
 
 
-def find_config_path(app_name: str) -> Path | None:
+def find_config_path(parent_xdg_config_dir: Path, app_name: str) -> Path | None:
     """
     :param app_name:
     :return: The actual path to the relevant xml file, of the most recent configuration directory.
     """
-    xdg_dir: Path = JETBRAINS_XDG_CONFIG_DIR
+    xdg_dir: Path = parent_xdg_config_dir
     if not xdg_dir.is_dir():
         return None
 
@@ -115,8 +135,8 @@ class Plugin(PluginInstance, TriggerQueryHandler):
 
         projects: list[IdeProject] = []
 
-        for app_name in IDE_CONFIGS:
-            config_path = find_config_path(app_name)
+        for app_name, config in IDE_CONFIGS.items():
+            config_path = find_config_path(config.parent_config_dir, app_name)
             if config_path is None:
                 continue
             projects.extend(
@@ -158,7 +178,7 @@ class Plugin(PluginInstance, TriggerQueryHandler):
                 id=f'{md_name}/{now - last_update:015d}/{project_path}/{app_name}',
                 text=project_name,
                 subtext=str(project_path),
-                iconUrls=[IDE_CONFIGS[app_name].icon_name, ICON_URL],
+                iconUrls=IDE_CONFIGS[app_name].icon_urls,
                 actions=[
                     Action(
                         f'{md_name}/{now - last_update:015d}/{project_path}/{app_name}',
