@@ -1,12 +1,13 @@
 import time
 from pathlib import Path
-from typing import NamedTuple
+from typing import Callable, NamedTuple, override
 from xml.etree import ElementTree
 
 from albert import (
     Action,
     Matcher,
     PluginInstance,
+    Query,
     StandardItem,
     TriggerQueryHandler,
     runDetachedProcess,
@@ -48,7 +49,7 @@ class IdeProject(NamedTuple):
 
 def get_recent_projects(path: Path) -> list[tuple[int, Path]]:
     """
-    :param path: Parse the xml at `path`.
+    :param path: Parse the XML at `path`.
     :return: All recent project paths and the time they were last open.
     """
     root: ElementTree.Element = ElementTree.parse(path).getroot()
@@ -61,6 +62,8 @@ def get_recent_projects(path: Path) -> list[tuple[int, Path]]:
                     path_to_timestamp[recent_path.attrib['value']] = 0
             case 'additionalInfo':
                 additional_info = option_tag[0]  # `<map>`
+            case _:
+                pass
 
     # For all `additionalInfo` entries, also add the real timestamp
     if additional_info is not None:
@@ -110,10 +113,12 @@ class Plugin(PluginInstance, TriggerQueryHandler):
         PluginInstance.__init__(self)
         TriggerQueryHandler.__init__(self)
 
+    @override
     def defaultTrigger(self):
         return 'jb '
 
-    def handleTriggerQuery(self, query) -> None:
+    @override
+    def handleTriggerQuery(self, query: Query) -> None:
         matcher = Matcher(query.string)
 
         projects: list[IdeProject] = []
@@ -135,7 +140,7 @@ class Plugin(PluginInstance, TriggerQueryHandler):
         # The projects accessed the most recently comes first
         projects.sort(key=lambda project: -project.timestamp)
 
-        projects_with_score = []
+        projects_with_score: list[tuple[IdeProject, float]] = []
         for i, project in enumerate(projects):
             score = (1 - i) / len(projects)
             if matcher.match(project.name):
@@ -157,6 +162,11 @@ class Plugin(PluginInstance, TriggerQueryHandler):
             if not desktop_file:
                 continue
 
+            launch_call: Callable[[str, Path], int] = (  # noqa: E731
+                lambda desktop_file_=desktop_file, project_path_=project_path: runDetachedProcess(
+                    ['gtk-launch', desktop_file_, str(project_path_)]
+                )
+            )
             item = StandardItem(
                 id=f'{md_name}/{now - last_update:015d}/{project_path}/{app_name}',
                 text=project_name,
@@ -166,10 +176,8 @@ class Plugin(PluginInstance, TriggerQueryHandler):
                     Action(
                         f'{md_name}/{now - last_update:015d}/{project_path}/{app_name}',
                         f'Open in {app_name}',
-                        lambda desktop_file_=desktop_file, project_path_=project_path: runDetachedProcess(
-                            ['gtk-launch', desktop_file_, str(project_path_)]
-                        ),
+                        launch_call,
                     )
                 ],
             )
-            query.add(item)
+            query.add(item)  # pyright: ignore[reportUnknownMemberType]
