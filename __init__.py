@@ -5,6 +5,7 @@ from xml.etree import ElementTree
 
 from albert import (
     Action,
+    Item,
     Matcher,
     PluginInstance,
     Query,
@@ -152,6 +153,7 @@ class Plugin(PluginInstance, TriggerQueryHandler):
 
         now = int(time.time() * 1000.0)
 
+        items: list[Item] = []
         last_update: int
         project_path: Path
         app_name: str
@@ -180,4 +182,5 @@ class Plugin(PluginInstance, TriggerQueryHandler):
                     )
                 ],
             )
-            query.add(item)  # pyright: ignore[reportUnknownMemberType]
+            items.append(item)
+        query.add(items)  # pyright: ignore[reportUnknownMemberType]
