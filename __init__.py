@@ -170,7 +170,7 @@ class Plugin(PluginInstance, TriggerQueryHandler):
                 )
             )
             item = StandardItem(
-                id=f'{md_name}/{now - last_update:015d}/{project_path}/{app_name}',
+                id=self.id(),
                 text=project_name,
                 subtext=str(project_path),
                 iconUrls=IDE_CONFIGS[app_name].icon_urls,
