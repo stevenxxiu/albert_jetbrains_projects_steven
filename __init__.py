@@ -5,16 +5,18 @@ from xml.etree import ElementTree
 
 from albert import (
     Action,
+    Icon,
     Item,
     Matcher,
     PluginInstance,
     Query,
     StandardItem,
     TriggerQueryHandler,
+    makeImageIcon,
     runDetachedProcess,
 )
 
-md_iid = '3.0'
+md_iid = '4.0'
 md_version = '1.4'
 md_name = 'JetBrains Projects Steven'
 md_description = 'List and open JetBrains IDE projects'
@@ -22,19 +24,19 @@ md_license = 'MIT'
 md_url = 'https://github.com/stevenxxiu/albert_jetbrains_projects_steven'
 md_authors = ['@stevenxxiu']
 
-ANDROID_STUDIO_ICON_URL = f'file:{Path(__file__).parent / "icons/studio.svg"}'
+ANDROID_STUDIO_ICON_PATH = Path(__file__).parent / 'icons/studio.svg'
 GOOGLE_XDG_CONFIG_DIR = Path.home() / '.config/Google'
 
 
 class IdeConfig(NamedTuple):
-    icon_urls: list[str]
+    icon_factory: Callable[[], Icon]
     desktop_file: str
     parent_config_dir: Path
 
 
 IDE_CONFIGS: dict[str, IdeConfig] = {
     'AndroidStudio': IdeConfig(
-        icon_urls=['xdg:studio', ANDROID_STUDIO_ICON_URL],
+        icon_factory=lambda: makeImageIcon(ANDROID_STUDIO_ICON_PATH),
         desktop_file='android-studio.desktop',
         parent_config_dir=GOOGLE_XDG_CONFIG_DIR,
     ),
@@ -173,7 +175,7 @@ class Plugin(PluginInstance, TriggerQueryHandler):
                 id=self.id(),
                 text=project_name,
                 subtext=str(project_path),
-                iconUrls=IDE_CONFIGS[app_name].icon_urls,
+                icon_factory=IDE_CONFIGS[app_name].icon_factory,
                 actions=[
                     Action(
                         f'{md_name}/{now - last_update:015d}/{project_path}/{app_name}',
