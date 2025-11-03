@@ -1,4 +1,3 @@
-import time
 from pathlib import Path
 from typing import Callable, NamedTuple, override
 from xml.etree import ElementTree
@@ -153,13 +152,10 @@ class Plugin(PluginInstance, TriggerQueryHandler):
             projects_with_score.append((project, score))
         projects_with_score.sort(key=lambda t: t[1], reverse=True)
 
-        now = int(time.time() * 1000.0)
-
         items: list[Item] = []
-        last_update: int
         project_path: Path
         app_name: str
-        for (project_name, project_path, app_name, last_update), _ in projects_with_score:
+        for i, ((project_name, project_path, app_name, _last_update), _) in enumerate(projects_with_score):
             if not project_path.exists():
                 continue
             desktop_file = IDE_CONFIGS[app_name].desktop_file
@@ -172,13 +168,13 @@ class Plugin(PluginInstance, TriggerQueryHandler):
                 )
             )
             item = StandardItem(
-                id=self.id(),
+                id=str(i),
                 text=project_name,
                 subtext=str(project_path),
                 icon_factory=IDE_CONFIGS[app_name].icon_factory,
                 actions=[
                     Action(
-                        f'{md_name}/{now - last_update:015d}/{project_path}/{app_name}',
+                        'open',
                         f'Open in {app_name}',
                         launch_call,
                     )
