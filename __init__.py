@@ -1,22 +1,22 @@
+from collections.abc import Generator
 from pathlib import Path
 from typing import Callable, NamedTuple, override
 from xml.etree import ElementTree
 
 from albert import (
     Action,
+    GeneratorQueryHandler,
     Icon,
     Item,
     Matcher,
     PluginInstance,
-    Query,
+    QueryContext,
     StandardItem,
-    TriggerQueryHandler,
-    makeImageIcon,
     runDetachedProcess,
 )
 
-md_iid = '4.0'
-md_version = '1.4'
+md_iid = '5.0'
+md_version = '1.5'
 md_name = 'JetBrains Projects Steven'
 md_description = 'List and open JetBrains IDE projects'
 md_license = 'MIT'
@@ -35,7 +35,7 @@ class IdeConfig(NamedTuple):
 
 IDE_CONFIGS: dict[str, IdeConfig] = {
     'AndroidStudio': IdeConfig(
-        icon_factory=lambda: makeImageIcon(ANDROID_STUDIO_ICON_PATH),
+        icon_factory=lambda: Icon.image(ANDROID_STUDIO_ICON_PATH),
         desktop_file='android-studio.desktop',
         parent_config_dir=GOOGLE_XDG_CONFIG_DIR,
     ),
@@ -110,18 +110,18 @@ def get_project_name(path: Path) -> str:
         return path.name
 
 
-class Plugin(PluginInstance, TriggerQueryHandler):
+class Plugin(PluginInstance, GeneratorQueryHandler):
     def __init__(self):
         PluginInstance.__init__(self)
-        TriggerQueryHandler.__init__(self)
+        GeneratorQueryHandler.__init__(self)
 
     @override
     def defaultTrigger(self):
         return 'jb '
 
     @override
-    def handleTriggerQuery(self, query: Query) -> None:
-        matcher = Matcher(query.string)
+    def items(self, ctx: QueryContext) -> Generator[list[Item]]:
+        matcher = Matcher(ctx.query)
 
         projects: list[IdeProject] = []
 
@@ -181,4 +181,4 @@ class Plugin(PluginInstance, TriggerQueryHandler):
                 ],
             )
             items.append(item)
-        query.add(items)  # pyright: ignore[reportUnknownMemberType]
+        yield items
